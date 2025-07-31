@@ -990,18 +990,49 @@ function shareCode() {
                 with love for developers worldwide.
               </p>
               <div className="flex space-x-4">
-                {[Github, Twitter, Linkedin, Mail].map((Icon, index) => (
+                <a
+                  href="https://github.com/SUJALGPM"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button
-                    key={index}
                     variant="ghost"
                     size="icon"
                     className="h-12 w-12 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-all duration-300 hover:scale-110"
                   >
-                    <Icon className="h-5 w-5" />
+                    <Github className="h-5 w-5" />
                   </Button>
-                ))}
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/sujal-dingankar-3094ba289"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-all duration-300 hover:scale-110"
+                  >
+                    <Linkedin className="h-5 w-5" />
+                  </Button>
+                </a>
+                <a
+                  href="mailto:Mailme.sujaldingankar@gmail.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-all duration-300 hover:scale-110"
+                  >
+                    <Mail className="h-5 w-5" />
+                  </Button>
+                </a>
               </div>
             </div>
+
+            {/* Product Links */}
             <div>
               <h3 className="font-bold text-white mb-4">Product</h3>
               <ul className="space-y-3 text-sm text-white/70">
@@ -1017,6 +1048,8 @@ function shareCode() {
                 ))}
               </ul>
             </div>
+
+            {/* Support Links */}
             <div>
               <h3 className="font-bold text-white mb-4">Support</h3>
               <ul className="space-y-3 text-sm text-white/70">
@@ -1033,6 +1066,7 @@ function shareCode() {
               </ul>
             </div>
           </div>
+
           <Separator className="my-8 bg-white/10" />
           <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-white/60">
             <p>© 2024 SmartShare. Crafted with magic ✨</p>
