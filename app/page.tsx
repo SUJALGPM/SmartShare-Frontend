@@ -373,7 +373,7 @@ export default function ShareCodeApp() {
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 opacity-20 blur-lg group-hover:opacity-40 transition-opacity duration-300"></div>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                SmartShare
+                ZapShare
               </span>
             </div>
 
@@ -819,7 +819,7 @@ export default function ShareCodeApp() {
                             className="w-full h-64 p-6 border border-white/20 rounded-2xl bg-white/10 backdrop-blur-sm font-mono text-sm text-white resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 placeholder-white/50"
                             placeholder={`// Paste your amazing code here...
 function shareCode() {
-  console.log('Welcome to SmartShare! 🚀');
+  console.log('Welcome to ZapShare! 🚀');
 }`}
                           />
                           <button
@@ -982,7 +982,7 @@ function shareCode() {
                   <Code className="h-6 w-6" />
                 </div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  SmartShare
+                  ZapShare
                 </span>
               </div>
               <p className="text-white/70 mb-6 max-w-md leading-relaxed">
@@ -1069,7 +1069,7 @@ function shareCode() {
 
           <Separator className="my-8 bg-white/10" />
           <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-white/60">
-            <p>© 2024 SmartShare. Crafted with magic ✨</p>
+            <p>© 2024 ZapShare. Crafted with magic ✨</p>
             <p>Made for developers, by Sujal Dingankar 💜</p>
           </div>
         </div>
