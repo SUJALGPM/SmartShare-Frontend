@@ -48,13 +48,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import axios from "axios";
+import { Toaster } from "../components/ui/sonner";
+import { toast } from "sonner";
 
 export default function ShareCodeApp() {
   const { theme, setTheme } = useTheme();
   const [dragActive, setDragActive] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // handle code share states...
   const [editorCode, setEditorCode] = useState("");
@@ -67,10 +69,13 @@ export default function ShareCodeApp() {
   const [code, setCode] = useState("");
   const [inputCode, setInputCode] = useState("");
 
-  // Handle Share code
+  // Handle Share code...........................
   const handleUpload = async () => {
     try {
-      console.log("data :", editorCode);
+      if (!editorCode) {
+        toast.error("Please enter some data before uploading.");
+        return;
+      }
 
       const res = await fetch(
         "https://smartshare-t3la.onrender.com/api/code-upload",
@@ -90,18 +95,21 @@ export default function ShareCodeApp() {
 
       if (res.ok) {
         setShareCode(result.data);
-        alert("Code uploaded successfully!");
+        toast.success("Code uploaded successfully!");
       } else {
-        alert(result.message || "Upload failed");
+        toast.error(result.message || "Upload failed.");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Something went wrong while uploading.");
+      toast.error("Something went wrong while uploading.");
     }
   };
 
   const handleGet = async () => {
-    console.log("code :", enteredCode);
+    if (!enteredCode) {
+      toast.error("Please enter the code before retrieving.");
+      return;
+    }
 
     try {
       const res = await fetch(
@@ -111,18 +119,17 @@ export default function ShareCodeApp() {
 
       if (res.ok) {
         setEditorCode(result.data);
-        // setSelectedLanguage(parsed.language);
-        alert("Code retrieved successfully!");
+        toast.success("Code retrieved successfully!");
       } else {
-        alert(result.message || "Code not found");
+        toast.error(result.message || "Code not found.");
       }
     } catch (error) {
       console.error("Get error:", error);
-      alert("Something went wrong while retrieving.");
+      toast.error("Something went wrong while retrieving the code.");
     }
   };
 
-  // Handle file share
+  // Handle file share............................
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -149,14 +156,17 @@ export default function ShareCodeApp() {
   };
 
   const handleFileUpload = async () => {
-    if (!selectedFile) return alert("Please select a file first!");
+    if (!selectedFile) {
+      toast.error("Please select a file first!");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", selectedFile);
 
-    console.log("file data :", formData);
-
     try {
+      setLoading(true);
+
       const res = await fetch(
         "https://smartshare-t3la.onrender.com/api/upload-file",
         {
@@ -171,93 +181,74 @@ export default function ShareCodeApp() {
 
       if (data.success) {
         setCode(data.data.toString());
+        toast.success("File uploaded successfully!");
+      } else {
+        toast.error(data.message || "Upload failed.");
       }
     } catch (err) {
       console.error("Upload failed", err);
-      alert("Upload failed. Try again.");
+      toast.error("Upload failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // const handleDownloadByCode = async () => {
-
-  //   if (!inputCode) {
-  //     alert("Please enter a valid 4-digit code.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const res = await fetch("http://localhost:9000/api/get-file", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ code: inputCode }),
-  //     });
-
-  //     const data = await res.json();
-
-  //     if (!data.success) {
-  //       alert(data.message || "Something went wrong.");
-  //       return;
-  //     }
-
-  //     const fileUrl = data.fileUrl;
-
-  //     console.log("file url :",fileUrl);
-      
-
-  //     // Trigger download directly
-  //     const a = document.createElement("a");
-  //     a.href = fileUrl;
-  //     a.download = ""; // let browser determine filename
-  //     a.style.display = "none";
-  //     document.body.appendChild(a);
-  //     a.click();
-  //     document.body.removeChild(a);
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Failed to download the file.");
-  //   }
-  // };
-
   const handleDownloadByCode = async () => {
-  if (!inputCode) {
-    alert("Please enter a valid 4-digit code.");
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:9000/api/get-file", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ code: inputCode }),
-    });
-
-    if (!res.ok) {
-      alert("Download failed or file not found.");
+    if (!inputCode) {
+      toast.error("Please enter a valid 4-digit code.");
       return;
     }
 
-    const blob = await res.blob();
-    const fileName = res.headers
-      .get("Content-Disposition")
-      ?.split("filename=")[1]
-      ?.replace(/"/g, "") || "downloaded-file";
+    setLoading(true);
+    try {
+      const res = await fetch(
+        "https://smartshare-t3la.onrender.com/api/get-file",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code: inputCode }),
+        }
+      );
 
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong during download.");
-  }
-};
+      if (!res.ok) {
+        toast.error("Download failed or file not found.");
+        return;
+      }
 
+      const blob = await res.blob();
+
+      // 👇 Get filename from header properly (handling encoding too)
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let fileName = "downloaded-file";
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(
+          /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+        );
+        if (match != null && match[1]) {
+          fileName = match[1].replace(/['"]/g, "");
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Download started successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong during download.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -639,107 +630,131 @@ export default function ShareCodeApp() {
                   </TabsList>
 
                   <TabsContent value="upload" className="mt-0">
-                    <div
-                      className={`relative border-2 border-dashed rounded-3xl p-16 text-center transition-all duration-500 ease-in-out ${
-                        dragActive
-                          ? "border-purple-400 bg-gradient-to-br from-purple-500/20 to-pink-500/20 scale-105 shadow-2xl shadow-purple-500/25"
-                          : "border-white/30 hover:border-purple-400/50 hover:bg-white/5"
-                      }`}
-                      onDragEnter={handleDrag}
-                      onDragLeave={handleDrag}
-                      onDragOver={handleDrag}
-                      onDrop={handleDrop}
-                    >
-                      {/* Floating bubbles */}
-                      <div className="absolute top-5 left-5 w-4 h-4 bg-purple-400 rounded-full animate-ping"></div>
-                      <div className="absolute top-10 right-10 w-6 h-6 bg-pink-400 rounded-full animate-pulse"></div>
-                      <div className="absolute bottom-10 left-10 w-5 h-5 bg-white/20 rounded-full animate-bounce"></div>
-
-                      <h3 className="text-3xl font-bold text-white mb-2">
-                        {dragActive
-                          ? "Release to upload! 🚀"
-                          : "Drop your files here"}
-                      </h3>
-                      <p className="text-white/70 mb-6 text-lg">
-                        Or click to browse • Up to{" "}
-                        <span className="font-bold text-purple-400">50MB</span>{" "}
-                        per file
-                      </p>
-
-                      {/* File type badges */}
-                      <div className="flex flex-wrap justify-center gap-3 mb-6">
-                        {["JS", "HTML", "JSON", "PDF", "ZIP", "OTHERS"].map(
-                          (type) => (
-                            <span
-                              key={type}
-                              className="px-4 py-2 text-sm font-medium bg-white/10 text-white/80 rounded-xl border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 hover:scale-105"
-                            >
-                              {type}
-                            </span>
-                          )
-                        )}
+                    {loading ? (
+                      <div className="flex flex-col items-center justify-center py-10">
+                        <img
+                          src="/progress.gif"
+                          alt="Loading..."
+                          className="w-24 h-24 mb-4"
+                        />
+                        <p className="text-lg font-medium">
+                          Processing your request, please wait...
+                        </p>
                       </div>
+                    ) : (
+                      <div
+                        className={`relative border-2 border-dashed rounded-3xl p-16 text-center transition-all duration-500 ease-in-out ${
+                          dragActive
+                            ? "border-purple-400 bg-gradient-to-br from-purple-500/20 to-pink-500/20 scale-105 shadow-2xl shadow-purple-500/25"
+                            : "border-white/30 hover:border-purple-400/50 hover:bg-white/5"
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                      >
+                        {/* Floating bubbles */}
+                        <div className="absolute top-5 left-5 w-4 h-4 bg-purple-400 rounded-full animate-ping"></div>
+                        <div className="absolute top-10 right-10 w-6 h-6 bg-pink-400 rounded-full animate-pulse"></div>
+                        <div className="absolute bottom-10 left-10 w-5 h-5 bg-white/20 rounded-full animate-bounce"></div>
 
-                      {/* File Choose Button + Code Box + Input */}
-                      <div className="flex flex-wrap sm:flex-nowrap justify-center items-center gap-4 mt-6">
-                        {/* File Input */}
-                        <div>
-                          <label htmlFor="file-upload">
-                            <button className="w-[160px] px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-sm text-center">
-                              + Choose Files
-                            </button>
-                          </label>
-                          <input
-                            id="file-upload"
-                            type="file"
-                            className="hidden"
-                            onChange={handleFileChange}
-                          />
-                          {/* Show selected file name */}
-                          {selectedFile && (
-                            <div className="mt-2 text-sm text-purple-300 font-mono">
-                              {selectedFile.name}
-                            </div>
+                        <h3 className="text-3xl font-bold text-white mb-2">
+                          {dragActive
+                            ? "Release to upload! 🚀"
+                            : "Drop your files here"}
+                        </h3>
+                        <p className="text-white/70 mb-6 text-lg">
+                          Or click to browse • Up to{" "}
+                          <span className="font-bold text-purple-400">
+                            50MB
+                          </span>{" "}
+                          per file
+                        </p>
+
+                        {/* File type badges */}
+                        <div className="flex flex-wrap justify-center gap-3 mb-6">
+                          {["JS", "HTML", "JSON", "PDF", "ZIP", "OTHERS"].map(
+                            (type) => (
+                              <span
+                                key={type}
+                                className="px-4 py-2 text-sm font-medium bg-white/10 text-white/80 rounded-xl border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                              >
+                                {type}
+                              </span>
+                            )
                           )}
                         </div>
 
-                        {/* Generated Code Box */}
-                        <div className="w-[160px] px-6 py-3 border border-purple-400 text-white-400 font-mono text-sm text-center rounded-xl bg-white/5 backdrop-blur-sm">
-                          {code || "----"}
+                        {/* File Choose Button + Code Box + Input */}
+                        <div className="flex flex-wrap sm:flex-nowrap justify-center items-center gap-4 mt-6">
+                          {/* File Input */}
+                          <div className="flex flex-col items-center">
+                            <label className="cursor-pointer">
+                              <input
+                                id="file-upload"
+                                type="file"
+                                className="hidden"
+                                onChange={handleFileChange}
+                              />
+                              <div className="w-[160px] px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-sm text-center">
+                                + Choose File
+                              </div>
+                            </label>
+
+                            {selectedFile && (
+                              <div className="mt-2 text-sm text-purple-300 font-mono text-center">
+                                <p>{selectedFile.name}</p>
+                                <button
+                                  className="mt-1 text-red-400 hover:underline text-xs"
+                                  onClick={() => setSelectedFile(null)}
+                                  type="button"
+                                >
+                                  Remove file
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Generated Code Box */}
+                          <div className="w-[160px] px-6 py-3 border border-purple-400 text-white-400 font-mono text-sm text-center rounded-xl bg-white/5 backdrop-blur-sm">
+                            {code || "----"}
+                          </div>
+
+                          {/* Manual Code Input */}
+                          <input
+                            type="text"
+                            placeholder="Enter code"
+                            className="w-[160px] px-6 py-3 border border-purple-400 text-white-400 font-mono text-sm text-center rounded-xl bg-white/5 backdrop-blur-sm placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            value={inputCode}
+                            onChange={(e) => setInputCode(e.target.value)}
+                          />
                         </div>
 
-                        {/* Manual Code Input */}
-                        <input
-                          type="text"
-                          placeholder="Enter code"
-                          className="w-[160px] px-6 py-3 border border-purple-400 text-white-400 font-mono text-sm text-center rounded-xl bg-white/5 backdrop-blur-sm placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                          value={inputCode}
-                          onChange={(e) => setInputCode(e.target.value)}
-                        />
-                      </div>
+                        {/* Upload / Download Buttons */}
+                        <div className="w-full max-w-3xl mx-auto px-4">
+                          <div className="flex flex-col lg:flex-row justify-between gap-4 mt-6">
+                            <Button
+                              size="lg"
+                              onClick={handleFileUpload}
+                              className="w-full lg:w-1/2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105"
+                            >
+                              <Upload className="mr-2 h-5 w-5" />
+                              Upload File
+                            </Button>
 
-                      {/* Upload / Download Buttons */}
-                      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-5 w-full px-10">
-                        <Button
-                          size="lg"
-                          className="flex-1 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-5 rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105"
-                          onClick={handleFileUpload}
-                        >
-                          <Upload className="mr-2 h-5 w-5" />
-                          Upload Code
-                        </Button>
-
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          className="flex-1 w-full border border-white/30 text-white hover:bg-white/10 font-bold px-8 py-5 rounded-2xl transition-all duration-300 transform hover:scale-105 bg-black"
-                          onClick={handleDownloadByCode}
-                        >
-                          <Download className="mr-2 h-5 w-5" />
-                          Get Code
-                        </Button>
+                            <Button
+                              size="lg"
+                              variant="outline"
+                              onClick={handleDownloadByCode}
+                              className="w-full lg:w-1/2 border border-white/30 text-white hover:bg-white/10 font-bold py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 bg-black"
+                            >
+                              <Download className="mr-2 h-5 w-5" />
+                              Get File
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="code" className="mt-0">
@@ -802,37 +817,45 @@ export default function ShareCodeApp() {
                             value={editorCode}
                             onChange={(e) => setEditorCode(e.target.value)}
                             className="w-full h-64 p-6 border border-white/20 rounded-2xl bg-white/10 backdrop-blur-sm font-mono text-sm text-white resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 placeholder-white/50"
-                            placeholder="// Paste your amazing code here...
+                            placeholder={`// Paste your amazing code here...
 function shareCode() {
   console.log('Welcome to SmartShare! 🚀');
-}"
+}`}
                           />
-                          <div className="absolute bottom-4 right-4 text-xs text-white/50 bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm">
-                            Ready to share
-                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(editorCode);
+                              toast.success("Code copied to clipboard!");
+                            }}
+                            className="absolute bottom-4 right-4 text-sm font-medium text-white bg-[#7F56D9] hover:bg-[#6D28D9] px-4 py-1 rounded-lg shadow-lg transition-all duration-200 border border-white/20"
+                          >
+                            Copy Code
+                          </button>
                         </div>
                       </div>
 
                       {/* REPLACEMENT: Two buttons instead of one */}
-                      <div className="flex justify-between gap-4">
-                        <Button
-                          onClick={handleUpload}
-                          size="lg"
-                          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105"
-                        >
-                          <Upload className="mr-2 h-6 w-6" />
-                          Upload Code
-                        </Button>
+                      <div className="w-full max-w-4xl mx-auto px-4">
+                        <div className="flex flex-col lg:flex-row gap-4 w-full">
+                          <Button
+                            onClick={handleUpload}
+                            size="lg"
+                            className="w-full lg:w-1/2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105"
+                          >
+                            <Upload className="mr-2 h-6 w-6" />
+                            Upload Code
+                          </Button>
 
-                        <Button
-                          onClick={handleGet}
-                          size="lg"
-                          variant="outline"
-                          className="flex-1 border border-white/30 text-white hover:bg-white/10 font-bold py-4 rounded-2xl transition-all duration-300 transform hover:scale-105"
-                        >
-                          <Download className="mr-2 h-6 w-6" />
-                          Get Code
-                        </Button>
+                          <Button
+                            onClick={handleGet}
+                            size="lg"
+                            variant="outline"
+                            className="w-full lg:w-1/2 border border-white/30 text-white hover:bg-white/10 font-bold py-4 rounded-2xl transition-all duration-300 transform hover:scale-105"
+                          >
+                            <Download className="mr-2 h-6 w-6" />
+                            Get Code
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
@@ -1133,6 +1156,8 @@ function shareCode() {
           animation-delay: 4000ms;
         }
       `}</style>
+
+      <Toaster position="top-right" />
     </div>
   );
 }
