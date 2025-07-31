@@ -631,7 +631,7 @@ export default function ShareCodeApp() {
 
                   <TabsContent value="upload" className="mt-0">
                     {loading ? (
-                      <div className="flex flex-col items-center justify-center py-10 w-[400px] rounded-2xl shadow-lg bg-white mx-auto">
+                      <div className="flex flex-col items-center justify-center py-10 w-full max-w-sm rounded-2xl shadow-lg bg-white mx-auto px-4">
                         <img
                           src="/progress.gif"
                           alt="Loading..."
